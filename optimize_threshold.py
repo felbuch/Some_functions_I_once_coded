@@ -17,6 +17,10 @@ def cost_of_threshold(threshold, true_y, predicted_probs, C_FP, C_FN, average_co
     FN = len(df[(df['y'] == 1) & (df['yhat']==0)])
 
     cost = FP * C_FP + FN * C_FN
+
+    if average_cost_per_event:
+        cost /= (FP + FN)
+
     return(cost)
 
 def optimize_threshold(true_y, predicted_probs, C_FP, C_FN, mesh = 100):
