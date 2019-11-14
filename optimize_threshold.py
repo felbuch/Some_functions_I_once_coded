@@ -3,10 +3,13 @@
 import numpy as np
 import pandas as pd
 
-def cost_of_threshold(threshold, true_y, predicted_probs, C_FP, C_FN):
+def cost_of_threshold(threshold, true_y, predicted_probs, C_FP, C_FN, average_cost_per_event = False):
     '''An auxiliary function.
     Calculates the cost (of false positives and false negatives) of a classification model
-    if a certain threshold is used. '''
+    if a certain threshold is used.
+    Normally, returns the total cost.
+    If average_cost_per_event = True, this cost is divided by the total number of erroneous efents (FP + FN)
+    to yield, as the name says, the average cost per event'''
     predicted_y = [1 if p > threshold else 0 for p in predicted_probs]
 
     df = pd.DataFrame({'y': true_y, 'yhat': predicted_y})
