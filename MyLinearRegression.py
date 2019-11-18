@@ -5,7 +5,14 @@ import numpy as np
 class MyLinearModel():
 
 '''This is an OLS multiple linear regression class.
-It can fit regressions both with and without an intercept'''
+It can fit regressions both with and without an intercept.
+If omit_intercept = True, the intercept is omited,
+and if it is False, the intercept is included.
+By default, the intercept IS included.
+
+All matrices passed to the class are numpy arrays (not pandas dataframes!)
+
+'''
 
     def __init__(self, omit_intercept = False):
         self.X = None
@@ -15,24 +22,34 @@ It can fit regressions both with and without an intercept'''
         pass
 
     def add_intercept_column(self, Matrix):
-        '''This is an auxiliary function'''
+        '''This is an auxiliary function, for internal use.
+        Given a matrix Matrix, it adds a column of 'ones'
+        to allow for estimating the intercept of the regression model.'''
         if self.omit_intercept:
+            #If we do not want to estimate and intercept, return the matrix unchanged
             return(Matrix)
         else:
-            N = len(Matrix)
-            X_with_ones = np.c_[np.ones(N),Matrix]
+            #If we do want to estimate an intercept, add a column of ones to the matrix
+            N = len(Matrix) #How many rows does the extra column have
+            X_with_ones = np.c_[np.ones(N),Matrix] #Add a column of ones to the inputed matrix
             return(X_with_ones)
 
     def fit(self, X, Y):
+        '''Fits a regression model.
+        Covariates are given in dataframe'''
+        #Store inputed variables as attributes of the Self
         self.X = X
         self.X = self.add_intercept_column(self.X)
         self.Y = Y
-        Xt = np.transpose(self.X)
-        Q = np.linalg.inv(Xt @ self.X)
-        self.b = Q @ Xt @Y
+        #Define intermediary matrices for convenience
+        #and to simplify notation
+        Xt = np.transpose(self.X) #Transpose of X
+        Q = np.linalg.inv(Xt @ self.X) #(X'X)^{-1}
+        self.b = Q @ Xt @Y #b = [(X'X)^-1]X'y
         return(self.b)
 
     def predict(self, new_X):
+        '''Predicts the value of y on a new dataset, new_X.'''
         new_X = self.add_intercept_column(new_X)
         return new_X @ self.b
 
@@ -42,19 +59,23 @@ It can fit regressions both with and without an intercept'''
         return self.b
 
     def residuals(self):
+        '''Calculates the residuals of the regression model.
+        Residuals are in-sample.'''
         yhat = self.X @ self.b
         return self.Y - yhat
 
     def stdev_residuals(self):
         '''Returns the standard deviation of the residuals of the fitted model'''
         e = self.residuals()
-        n = self.X.shape[0]
-        p = self.X.shape[1]
-        sigma2 = e.dot(np.transpose(e)) / (n-p)
-        return(np.sqrt(sigma2))
+        n = self.X.shape[0] #Number of observations
+        p = self.X.shape[1] #Number of estimated parameters
+        sigma2 = e.dot(np.transpose(e)) / (n-p) #Variance of residuals
+        return(np.sqrt(sigma2)) #Square root of variance of residuals gives the standard deviation of residuals
 
     def coef_cov_mat(self):
-        '''Covariance matrix of the coefficients'''
+        '''Covariance matrix of the coefficients.
+        This function makes use of the formula
+        cov(b) = [(X'X)^{-1}] sigma2.'''
         Xt = np.transpose(self.X)
         Q = np.linalg.inv(Xt @ self.X)
         sigma2 = self.stdev_residuals() ** 2
@@ -70,8 +91,9 @@ It can fit regressions both with and without an intercept'''
         return(s)
 
     def R2(self):
-        SSR = self.stdev_residuals() ** 2
-        SST = np.std(self.Y) ** 2
+        '''(Multivariate) R2 of the regression model (in-sample).'''
+        SSR = self.stdev_residuals() ** 2 #Sum of squares of residuals
+        SST = np.std(self.Y) ** 2 #Total sum of squares
         return(1 - (SSR / SST))
 
 
